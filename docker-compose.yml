@@ -1,0 +1,20 @@
+version: "3.7"
+services:
+  schemaRegistry:
+    image: confluentinc/cp-schema-registry:6.1.0
+    environment:
+      - SCHEMA_REGISTRY_KAFKASTORE_BOOTSTRAP_SERVERS=172.16.5.235:30001,172.16.5.236:30002,172.16.5.235:30003 
+      - SCHEMA_REGISTRY_HOST_NAME=localhost 
+      - SCHEMA_REGISTRY_LISTENERS=http://localhost:8081 
+      - SCHEMA_REGISTRY_DEBUG=true 
+    network_mode: host
+  
+  kafkaRest:
+    image: confluentinc/cp-kafka-rest:6.1.0
+    environment:
+      - KAFKA_REST_ZOOKEEPER_CONNECT=localhost:32181 
+      - KAFKA_REST_LISTENERS=http://localhost:8082 
+      - KAFKA_REST_SCHEMA_REGISTRY_URL=http://localhost:8081 
+      - KAFKA_REST_BOOTSTRAP_SERVERS=localhost:29092  
+    network_mode: host
+      

@@ -1,0 +1,130 @@
+---
+- hosts: "{{ HOST }}"
+  become: yes
+  become_user: root
+  vars_files:
+    - vars.yml
+  tasks:
+    - name: cluster_zookeeper
+      docker_container:
+        name: cluster_zookeeper
+        image: bitnami/zookeeper:latest
+        network_mode: host
+        # ports:
+        #   - 12181:12181
+        #   - 2888:2888
+        #   - 3888:3888
+        env:
+          ZOO_PORT_NUMBER: "12181"
+          ZOO_HEAP_SIZE: "8096"
+          ZOO_SERVER_ID: "{{ID}}"
+          ZOO_ENABLE_PROMETHEUS_METRICS: "true"
+          ZOO_SERVERS: "{{ master1 }}:2888:3888,{{ master2 }}:2888:3888,{{worker1}}:2888:3888"
+          ALLOW_ANONYMOUS_LOGIN: "yes"
+        restart_policy: always
+    - name: kafka
+      docker_container:
+        name: cluster_kafka
+        image: bitnami/kafka:2.5.0
+        network_mode: host
+        # ports:
+        #   - 19092:19092
+        #   - 29092:29092
+        restart_policy: always
+        env:
+          KAFKA_CFG_BROKER_ID: "{{ ID }}"
+          KAFKA_CFG_PORT: "19092"
+          KAFKA_CFG_ZOOKEEPER_CONNECT: "{{master1}}:12181,{{master2}}:12181,{{worker1}}:12181"
+          ALLOW_PLAINTEXT_LISTENER: "yes"
+          KAFKA_CFG_LISTENER_SECURITY_PROTOCOL_MAP: PLAINTEXT:PLAINTEXT,PLAINTEXT_HOST:PLAINTEXT
+          KAFKA_CFG_LISTENERS: PLAINTEXT://{{ MASTER_IP }}:19092,PLAINTEXT_HOST://{{ MASTER_IP }}:29092
+          KAFKA_CFG_ADVERTISED_LISTENERS: PLAINTEXT://{{ MASTER_IP }}:19092,PLAINTEXT_HOST://{{ MASTER_IP }}:29092
+          KAFKA_CFG_DELETE_TOPIC_ENABLE: "true"
+          KAFKA_CFG_LOG_RETENTION_HOURS: "12"
+          KAFKA_HEAP_OPTS: -Xmx1g -Xms1g
+# - hosts: master2
+#   become: yes
+#   become_user: root
+#   vars_files:
+#     - vars.yml
+#   tasks:
+#     - name: cluster_zookeeper
+#       docker_container:
+#         name: cluster_zookeeper
+#         image: bitnami/zookeeper:latest
+#         network_mode: host
+#         # ports:
+#         #   - 12181:12181
+#         #   - 2888:2888
+#         #   - 3888:3888
+#         env:
+#           ZOO_PORT_NUMBER: "12181"
+#           ZOO_HEAP_SIZE: "8096"
+#           ZOO_SERVER_ID: "2"
+#           ZOO_ENABLE_PROMETHEUS_METRICS: "true"
+#           ZOO_SERVERS: "{{ MASTER1 }}:2888:3888,{{ MASTER2 }}:2888:3888,{{MASTER3}}:2888:3888"
+#           ALLOW_ANONYMOUS_LOGIN: "yes"
+#         restart_policy: always
+#     - name: kafka
+#       docker_container:
+#         name: cluster_kafka
+#         image: bitnami/kafka:2.5.0
+#         network_mode: host
+#         # ports:
+#         #   - 19092:19092
+#         #   - 29092:29092
+#         restart_policy: always
+#         env:
+#           KAFKA_CFG_BROKER_ID: "2"
+#           KAFKA_CFG_PORT: "19092"
+#           KAFKA_CFG_ZOOKEEPER_CONNECT: "{{MASTER1}}:12181,{{MASTER2}}:12181,{{MASTER3}}:12181"
+#           ALLOW_PLAINTEXT_LISTENER: "yes"
+#           KAFKA_CFG_LISTENER_SECURITY_PROTOCOL_MAP: PLAINTEXT:PLAINTEXT,PLAINTEXT_HOST:PLAINTEXT
+#           KAFKA_CFG_LISTENERS: PLAINTEXT://{{ MASTER2 }}:19092,PLAINTEXT_HOST://{{ MASTER2 }}:29092
+#           KAFKA_CFG_ADVERTISED_LISTENERS: PLAINTEXT://{{ MASTER2 }}:19092,PLAINTEXT_HOST://{{ MASTER2 }}:29092
+#           KAFKA_CFG_DELETE_TOPIC_ENABLE: "true"
+#           KAFKA_CFG_LOG_RETENTION_HOURS: "12"
+#           KAFKA_HEAP_OPTS: -Xmx1g -Xms1g
+# - hosts: worker1
+#   become: yes
+#   become_user: root
+#   vars_files:
+#     - vars.yml
+#   tasks:
+#     - name: cluster_zookeeper
+#       docker_container:
+#         name: cluster_zookeeper
+#         image: bitnami/zookeeper:latest
+#         network_mode: host
+#         # ports:
+#         #   - 12181:12181
+#         #   - 2888:2888
+#         #   - 3888:3888
+#         env:
+#           ZOO_PORT_NUMBER: "12181"
+#           ZOO_HEAP_SIZE: "8096"
+#           ZOO_SERVER_ID: "3"
+#           ZOO_ENABLE_PROMETHEUS_METRICS: "true"
+#           ZOO_SERVERS: "{{ MASTER1 }}:2888:3888,{{ MASTER2 }}:2888:3888,{{MASTER3}}:2888:3888"
+#           ALLOW_ANONYMOUS_LOGIN: "yes"
+#         restart_policy: always
+#     - name: kafka
+#       docker_container:
+#         name: cluster_kafka
+#         image: bitnami/kafka:2.5.0
+#         network_mode: host
+#         # ports:
+#         #   - 19092:19092
+#         #   - 29092:29092
+#         restart_policy: always
+#         env:
+#           KAFKA_CFG_BROKER_ID: "3"
+#           KAFKA_CFG_PORT: "19092"
+#           KAFKA_CFG_ZOOKEEPER_CONNECT: "{{MASTER1}}:12181,{{MASTER2}}:12181,{{MASTER3}}:12181"
+#           ALLOW_PLAINTEXT_LISTENER: "yes"
+#           KAFKA_CFG_LISTENER_SECURITY_PROTOCOL_MAP: PLAINTEXT:PLAINTEXT,PLAINTEXT_HOST:PLAINTEXT
+#           KAFKA_CFG_LISTENERS: PLAINTEXT://{{ MASTER3 }}:19092,PLAINTEXT_HOST://{{ MASTER3 }}:29092
+#           KAFKA_CFG_ADVERTISED_LISTENERS: PLAINTEXT://{{ MASTER3 }}:19092,PLAINTEXT_HOST://{{ MASTER3 }}:29092
+#           KAFKA_CFG_DELETE_TOPIC_ENABLE: "true"
+#           KAFKA_CFG_LOG_RETENTION_HOURS: "12"
+#           KAFKA_HEAP_OPTS: -Xmx1g -Xms1g
